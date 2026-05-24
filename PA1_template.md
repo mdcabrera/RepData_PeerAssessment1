@@ -1,0 +1,207 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+## Loading and preprocessing the data
+In order to load the data we need to use the *read.csv* function.
+
+
+``` r
+wd <- getwd()
+raw_data <- read.csv(file=file.path(wd,"data", "activity.csv"))
+```
+
+As the raw data does not provide the total number of steps per day, rather it presents the number of steps on a 5-minute interval basis, it is necessary to calculate the aggregate sum of steps.
+
+
+``` r
+daily_steps <- aggregate(
+  steps ~ date,
+  data = raw_data,
+  FUN = sum,
+  na.rm = TRUE
+)
+```
+
+## What is mean total number of steps taken per day?
+### 1.Make a histogram of the total number of steps taken each day
+
+
+``` r
+hist(
+  daily_steps$steps,
+  main = "Histogram of Steps",
+  xlab = "Steps",
+  ylab = "Frequency"
+)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+### 2. Calculate and report the mean and median total number of steps taken per day
+
+
+``` r
+steps_mean <- mean(daily_steps$steps)
+steps_median <- median(daily_steps$steps)
+```
+The mean total number of steps per days is 1.0766189\times 10^{4} steps.  
+The median total number of steps per days is 10765 steps.
+
+## What is the average daily activity pattern?
+### 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+We need to again use the raw data and aggregate the number of steps per each 5-minute interval across all days:  
+
+``` r
+avg_steps <- aggregate(
+  steps ~ interval,
+  data = raw_data,
+  FUN = mean,
+  na.rm = TRUE
+)
+```
+After preparing a new data frame, we can proceed with plotting the data:
+
+
+``` r
+plot(
+  avg_steps$interval,
+  avg_steps$steps,
+  type = "l",
+  xlab = "Interval",
+  ylab = "Average Number of Steps",
+  main = "Average Daily Activity Pattern"
+)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
+### 2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+
+``` r
+max_mean_steps <- max(avg_steps$steps)
+max_mean_steps_interval <- avg_steps$interval[
+  avg_steps$steps == max_mean_steps
+]
+```
+The interval with the highest average number of steps is number 835 with 206.1698113 steps.  
+
+## Imputing missing values
+
+### 1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+
+``` r
+total_NAs <- sum(is.na(raw_data$steps))
+```
+The total number of rows with missing data is: 2304.  
+
+### 2.Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+For this part, it was decided to replace the missing data using the average of the data for every 5-minute interval.
+
+For this the following flow is followed:
+1.Create a copy of the original data.
+2.Obtain the indexes of the rows with missing data.
+3.Replace the missing data by matching the intervals column of the original data, with the table of calculated averages per interval.  
+
+
+### 3.Create a new dataset that is equal to the original dataset but with the missing data filled in.  
+
+
+``` r
+new_data <-raw_data
+idx <- is.na(new_data$steps)
+new_data$steps[idx] <- avg_steps$steps[
+  match(new_data$interval[idx], avg_steps$interval)
+]
+total_NAs <- sum(is.na(new_data$steps))
+```
+The total number of rows with missing data is: 0.
+
+### 4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+
+``` r
+daily_steps_new_data <- aggregate(
+  steps ~ date,
+  data = new_data,
+  FUN = sum,
+  na.rm = FALSE
+)
+
+hist(
+  daily_steps_new_data$steps,
+  main = "Histogram of Steps",
+  xlab = "Steps",
+  ylab = "Frequency"
+)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+
+
+``` r
+steps_mean_new <- mean(daily_steps_new_data$steps)
+steps_median_new <- median(daily_steps_new_data$steps)
+```
+The mean total number of steps per days is 1.0766189\times 10^{4} steps.  
+The median total number of steps per days is 1.0766189\times 10^{4} steps.  
+
+Using this strategy, it can be seen that the mean was not changed and that the median converged to the mean. This is likely by the use of the interval mean to fill the missing data. Using the mean (a measure of central tendency) probably smoothed the variability of the data and reduced the skewness in the original data. 
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+### 1.Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.  
+
+
+``` r
+weekday_data <- raw_data
+weekday_data$day_type <-ifelse(
+  weekdays(as.Date(weekday_data$date)) %in% c("Saturday", "Sunday"),
+  "weekend",
+  "weekday"
+)
+weekday_data$day_type <- factor(weekday_data$day_type)
+```
+
+### 2.Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+
+
+``` r
+avg_steps <- aggregate(
+  steps ~ interval + day_type,
+  data = weekday_data,
+  FUN = sum
+)
+
+#Configure the plot grid
+par(mfrow = c(2, 1))  # 2 rows, 1 column
+
+#Weekday plot
+plot(
+  avg_steps$interval[avg_steps$day_type == "weekday"],
+  avg_steps$steps[avg_steps$day_type == "weekday"],
+  type = "l",
+  xlab = "Interval",
+  ylab = "Average Steps",
+  main = "Weekday"
+)
+
+#Weekend plot
+plot(
+  avg_steps$interval[avg_steps$day_type == "weekend"],
+  avg_steps$steps[avg_steps$day_type == "weekend"],
+  type = "l",
+  xlab = "Interval",
+  ylab = "Average Steps",
+  main = "Weekend"
+)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
