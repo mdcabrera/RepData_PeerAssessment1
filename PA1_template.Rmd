@@ -139,3 +139,49 @@ The median total number of steps per days is `r steps_median_new` steps.
 Using this strategy, it can be seen that the mean was not changed and that the median converged to the mean. This is likely by the use of the interval mean to fill the missing data. Using the mean (a measure of central tendency) probably smoothed the variability of the data and reduced the skewness in the original data. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+### 1.Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.  
+
+```{r}
+weekday_data <- raw_data
+weekday_data$day_type <-ifelse(
+  weekdays(as.Date(weekday_data$date)) %in% c("Saturday", "Sunday"),
+  "weekend",
+  "weekday"
+)
+weekday_data$day_type <- factor(weekday_data$day_type)
+```  
+
+### 2.Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). 
+
+```{r}
+avg_steps <- aggregate(
+  steps ~ interval + day_type,
+  data = weekday_data,
+  FUN = sum
+)
+
+#Configure the plot grid
+par(mfrow = c(2, 1))  # 2 rows, 1 column
+
+#Weekday plot
+plot(
+  avg_steps$interval[avg_steps$day_type == "weekday"],
+  avg_steps$steps[avg_steps$day_type == "weekday"],
+  type = "l",
+  xlab = "Interval",
+  ylab = "Average Steps",
+  main = "Weekday"
+)
+
+#Weekend plot
+plot(
+  avg_steps$interval[avg_steps$day_type == "weekend"],
+  avg_steps$steps[avg_steps$day_type == "weekend"],
+  type = "l",
+  xlab = "Interval",
+  ylab = "Average Steps",
+  main = "Weekend"
+)
+```  
+From the plot it can be seen that the average number of steps is higher on the weekends.
