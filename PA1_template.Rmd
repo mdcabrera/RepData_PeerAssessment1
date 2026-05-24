@@ -13,7 +13,7 @@ wd <- getwd()
 raw_data <- read.csv(file=file.path(wd,"data", "activity.csv"))
 ```
 
-As the raw data does not provide the total number of steps per day, rather it presents the number of steps on a 5-second-interval basis, it is necessary to calculate the aggregate sum of steps.
+As the raw data does not provide the total number of steps per day, rather it presents the number of steps on a 5-minute interval basis, it is necessary to calculate the aggregate sum of steps.
 
 ```{r}
 daily_steps <- aggregate(
@@ -36,16 +36,48 @@ hist(
 )
 ```
 
+### 2. Calculate and report the mean and median total number of steps taken per day
+
 ```{r}
 steps_mean <- mean(daily_steps$steps)
 steps_median <- median(daily_steps$steps)
 ```
-### 2. Calculate and report the mean and median total number of steps taken per day
-
 The mean total number of steps per days is `r steps_mean` steps.  
 The median total number of steps per days is `r steps_median` steps.
 
 ## What is the average daily activity pattern?
+### 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+We need to again use the raw data and aggregate the number of steps per each 5-minute interval across all days:  
+```{r}
+avg_steps <- aggregate(
+  steps ~ interval,
+  data = raw_data,
+  FUN = mean,
+  na.rm = TRUE
+)
+```
+After preparing a new data frame, we can proceed with plotting the data:
+
+```{r}
+plot(
+  avg_steps$interval,
+  avg_steps$steps,
+  type = "l",
+  xlab = "Interval",
+  ylab = "Average Number of Steps",
+  main = "Average Daily Activity Pattern"
+)
+```
+### 2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r}
+max_mean_steps <- max(avg_steps$steps)
+max_mean_steps_interval <- avg_steps$interval[
+  avg_steps$steps == max_mean_steps
+]
+```
+The interval with the highest average number of steps is number `r max_mean_steps_interval` with `r max_mean_steps` steps.  
 
 ## Imputing missing values
 
