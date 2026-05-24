@@ -5,21 +5,30 @@ output:
     keep_md: true
 ---
 
-
 ## Loading and preprocessing the data
+In order to load the data we need to use the *read.csv* function.
 
+```{r}
+wd <- getwd()
+raw_data <- read.csv(file=file.path(wd,"data", "activity.csv"))
+```
 
+As the raw data does not provide the total number of steps per day, rather it presents the number of steps on a 5-second-interval basis, it is necessary to calculate the aggregate sum of steps.
+
+```{r}
+daily_steps <- aggregate(
+  steps ~ date,
+  data = raw_data,
+  FUN = sum,
+  na.rm = TRUE
+)
+```
 
 ## What is mean total number of steps taken per day?
 
 
-
 ## What is the average daily activity pattern?
 
-
-
 ## Imputing missing values
-
-
 
 ## Are there differences in activity patterns between weekdays and weekends?
